@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Active Tracker
+=======
+# workout_tracker
+>>>>>>> a50d1d75a4ea12748efd93e69cb62f6889a4bf84
 
 ## Project setup
 ```
