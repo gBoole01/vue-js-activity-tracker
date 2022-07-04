@@ -26,6 +26,7 @@
             <img src="@/assets/images/pencil-light.png" class="h-3.5 w-auto" />
           </div>
           <div
+            @click="deleteWorkout"
             class="h-7 w-7 rounded-full flex justify-center items-center cursor-pointer bg-at-light-green shadow-lg"
           >
             <img src="@/assets/images/trash-light.png" class="h-3.5 w-auto" />
@@ -132,6 +133,7 @@
               <p v-else>{{ item.weight }}</p>
               <img
                 v-if="edit"
+                @click="deleteExercise(item.id)"
                 src="@/assets/images/trash-light-green.png"
                 class="absolute h-4 w-auto -left-5 cursor-pointer"
                 alt=""
@@ -140,6 +142,7 @@
           </div>
           <button
             v-if="edit"
+            @click="addExercise"
             type="button"
             class="py-2 px-6 rounded-sm self-start text-sm text-white bg-at-light-green duration-200 border-solid border-2 border-transparent hover:border-at-light-green hover:bg-white hover:text-at-light-green"
           >
@@ -169,7 +172,7 @@
               >
                 <option selected value="#">Select Type</option>
                 <option value="run">Run</option>
-                <option value="#">Walk</option>
+                <option value="walk">Walk</option>
               </select>
               <p v-else>{{ item.cardioType }}</p>
             </div>
@@ -213,6 +216,7 @@
               <p v-else>{{ item.pace }}</p>
               <img
                 v-if="edit"
+                @click="deleteExercise(item.id)"
                 src="@/assets/images/trash-light-green.png"
                 class="absolute h-4 w-auto -left-5 cursor-pointer"
                 alt=""
@@ -221,6 +225,7 @@
           </div>
           <button
             v-if="edit"
+            @click="addExercise"
             type="button"
             class="py-2 px-6 rounded-sm self-start text-sm text-white bg-at-light-green duration-200 border-solid border-2 border-transparent hover:border-at-light-green hover:bg-white hover:text-at-light-green"
           >
@@ -231,6 +236,7 @@
         <!-- Update -->
         <button
           v-if="edit"
+          @click="update"
           type="button"
           class="mt-10 py-2 px-6 rounded-sm self-start text-sm text-white bg-at-light-green duration-200 border-solid border-2 border-transparent hover:border-at-light-green hover:bg-white hover:text-at-light-green"
         >
@@ -244,8 +250,9 @@
 <script>
 import { computed, ref } from 'vue'
 import supabase from '../supabase/init'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import store from '../store'
+import { uid } from 'uid'
 
 export default {
   name: 'view-workout',
@@ -256,6 +263,7 @@ export default {
     const errorMsg = ref(null)
     const statusMsg = ref(null)
     const route = useRoute()
+    const router = useRouter()
     const user = computed(() => store.state.user)
 
     // Get current Id of route
@@ -283,21 +291,110 @@ export default {
     getData()
 
     // Delete workout
+    const deleteWorkout = async () => {
+      try {
+        const { error } = await supabase
+          .from('workouts')
+          .delete()
+          .eq('id', currentId)
+
+        if (error) throw error
+        router.push({ name: 'Home' })
+      } catch (error) {
+        errorMsg.value = `Error: ${error.message}`
+        setTimeout(() => {
+          errorMsg.value = null
+        }, 5000)
+      }
+    }
 
     // Edit mode
     const edit = ref(null)
-
     const editMode = () => {
       edit.value = !edit.value
     }
 
     // Add exercise
+    const addExercise = () => {
+      switch (data.value.workoutType) {
+        case 'strength':
+          data.value.exercises.push({
+            id: uid(),
+            exercise: '',
+            sets: '',
+            reps: '',
+            weight: '',
+          })
+          break
+        case 'cardio':
+          data.value.exercises.push({
+            id: uid(),
+            cardioType: '',
+            distance: '',
+            duration: '',
+            pace: '',
+          })
+          break
+
+        default:
+          break
+      }
+    }
 
     // Delete exercise
+    const deleteExercise = (id) => {
+      if (data.value.exercises.length > 1) {
+        data.value.exercises = data.value.exercises.filter(
+          (exercise) => exercise.id !== id,
+        )
+        return
+      }
+
+      errorMsg.value = 'Error: Workout need at least 1 exercise !'
+      setTimeout(() => {
+        errorMsg.value = null
+      }, 5000)
+      return
+    }
 
     // Update Workout
+    const update = async () => {
+      try {
+        const { error } = await supabase
+          .from('workouts')
+          .update({
+            workoutName: data.value.workoutName,
+            exercises: data.value.exercises,
+          })
+          .eq('id', currentId)
 
-    return { data, dataLoaded, errorMsg, statusMsg, edit, editMode, user }
+        if (error) throw error
+        edit.value = false
+        statusMsg.value = `Success: Workout Updated`
+        setTimeout(() => {
+          statusMsg.value = null
+        }, 5000)
+      } catch (error) {
+        errorMsg.value = `Error: ${error.message}`
+        setTimeout(() => {
+          errorMsg.value = null
+        }, 5000)
+      }
+    }
+
+    return {
+      data,
+      dataLoaded,
+      errorMsg,
+      statusMsg,
+      user,
+      edit,
+      editMode,
+      addExercise,
+      deleteExercise,
+      deleteWorkout,
+      update,
+    }
   },
 }
 </script>
