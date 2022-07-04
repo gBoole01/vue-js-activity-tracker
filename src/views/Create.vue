@@ -142,7 +142,7 @@
               >
                 <option selected value="#">Select Type</option>
                 <option value="run">Run</option>
-                <option value="#">Walk</option>
+                <option value="walk">Walk</option>
               </select>
             </div>
             <div class="flex flex-col flex-1">
@@ -266,7 +266,7 @@ export default {
       return
     }
 
-    // Listens for chaging of workout type input
+    // Listen to changes of workout type input
     const workoutChange = () => {
       exercises.value = []
       addExercise()
